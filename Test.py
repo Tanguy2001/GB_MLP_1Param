@@ -8,14 +8,14 @@ input_dim = 756
 hidden_dims = [1000, 1000]
 output_dim = 9
 
-dosier_train = "Entrainement_1e6"
+dosier_train = "Train1"
 
 
 model = MLP(input_dim, hidden_dims, output_dim)
 
 chemin_train = os.path.join("Train", dosier_train)
 chemin_weights = os.path.join(chemin_train, "Weights.pth")
-chemin_dataloader = os.path.join(chemin_train, "train_dataloader.pth")
+chemin_dataloader = os.path.join(chemin_train, "test_dataloader.pth")
 
 
 model.load_state_dict(torch.load(chemin_weights, map_location=torch.device("cpu")))

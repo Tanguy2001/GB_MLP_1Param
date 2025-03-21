@@ -7,6 +7,48 @@ import shutil
 import os
 import h5py
 
+from gbgpu.gbgpu import GBGPU
+from gbgpu.thirdbody import GBGPUThirdBody
+
+from gbgpu.utils.constants import *
+from gbgpu.utils.utility import *
+from Noise import AnalyticNoise
+
+
+def generate_catalog(f_min, f_max, num_samples):
+    f0 = np.random.uniform(f_min, f_max, num_samples)
+    amp = np.random.uniform(1e-23, 1e-21, num_samples)
+    fdot = np.random.uniform(7.538331e-16, 7.538331e-18, num_samples)
+    fddot = np.zeros(num_samples)  # np.random.uniform(1e-50, 1e-49, num_samples)
+    phi0 = np.random.uniform(0, 2 * np.pi, num_samples)
+    iota = np.random.uniform(0, np.pi, num_samples)
+    psi = np.random.uniform(0, np.pi, num_samples)
+    lam = np.random.uniform(-np.pi, np.pi, num_samples)
+    beta_sky = np.random.uniform(-np.pi / 2, np.pi / 2, num_samples)
+    return np.array((amp, f0, fdot, fddot, -phi0, iota, psi, lam, beta_sky))
+
+
+def generate_response(catalog, Tobs, dt, N):
+    gb = GBGPU(use_gpu=False)
+    gb.run_wave(*catalog, N=N, dt=dt, T=Tobs, oversample=1)
+    return gb
+
+
+def aggregate(a, gb, f_min0, df, start, stop):
+    k_min = round(f_min0 / df)
+    for i in range(start, stop):
+        i_start = gb.start_inds[i - start] - k_min
+        i_end = i_start + gb.N
+        a[i, i_start:i_end] = gb.A[i - start]
+
+
+def whiten(a, sample_frequencies):
+    noise = AnalyticNoise(sample_frequencies)
+    psd_A = noise.psd(option="A")
+    asd_A = np.sqrt(psd_A)
+    df = sample_frequencies[1] - sample_frequencies[0]
+    a *= np.sqrt(4 * df) / asd_A
+
 
 class WaveformDataset(Dataset):
 
