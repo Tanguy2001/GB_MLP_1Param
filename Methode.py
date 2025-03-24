@@ -73,26 +73,6 @@ class WaveformDataset(Dataset):
         )
 
 
-"""
-class MLP(nn.Module):
-    def __init__(self, input_size, hidden_size, output_size):
-        super(MLP, self).__init__()
-
-        self.fc1 = nn.Linear(input_size, hidden_size[0])
-        self.fc2 = nn.Linear(hidden_size[0], hidden_size[1])
-        self.fc3 = nn.Linear(hidden_size[1], output_size)
-
-        self.relu = nn.ReLU()
-
-    def forward(self, x):
-
-        x = self.relu(self.fc1(x))
-        x = self.relu(self.fc2(x))
-        x = self.fc3(x)
-        return x
-"""
-
-
 class MLP(nn.Module):
     def __init__(self, input_size, hidden_size, output_size):
         super(MLP, self).__init__()
@@ -114,6 +94,39 @@ class MLP(nn.Module):
             h = self.relu(layer(h))
         h = self.fc(h)
         return h
+
+
+class ConvMLP(nn.Module):
+    def __init__(self, input_channels, sequence_length, hidden_size, output_size):
+        super(ConvMLP, self).__init__()
+
+        self.conv1 = nn.Conv1d(input_channels, 32, kernel_size=3, padding=1)
+        self.conv2 = nn.Conv1d(32, 64, kernel_size=3, padding=1)
+
+        hidden_net_list = []
+        hidden_net_list.append(nn.Linear(32 * sequence_length, hidden_size[0]))
+
+        for i in range(1, len(hidden_size)):
+            hidden_net_list.append(nn.Linear(hidden_size[i - 1], hidden_size[i]))
+
+        self.hidden_net_list = nn.ModuleList(hidden_net_list)
+        self.fc = nn.Linear(hidden_size[-1], output_size)
+
+        self.relu = nn.ReLU()
+        self.pool = nn.MaxPool1d(2)
+
+    def forward(self, x):
+
+        x = self.conv1(x)
+        x = self.relu(x)
+        x = self.conv2(x)
+        x = self.relu(x)
+        x = self.pool(x)
+        x = x.view(x.size(0), -1)
+        for layer in self.hidden_net_list:
+            x = self.relu(layer(x))
+        x = self.fc(x)
+        return x
 
 
 def count_parameters(model):
@@ -139,6 +152,8 @@ def train_loop(dataloader, model, optimizer):
     train_loss = 0
     criterion = nn.MSELoss()
     for batch, (X, y) in enumerate(dataloader):
+        ##X = X.unsqueeze(1)  ##################
+
         predictions = model(X)
 
         loss = criterion(predictions, y)

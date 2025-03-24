@@ -1,0 +1,15 @@
+Dataset = 1e6 ; 2 couches 
+
+
+Ecart relatif moyen des paramètres sur les données de train : 
+
+
+[1.892274 0.300158 1.194124 0.000523 1.250011 0.833022 1.353034 0.708842 1.004382]
+
+
+Ecart relatif moyen des paramètres sur les données de test : 
+
+[4.574169 0.177467 1.384948 0.000724 1.185826 1.147489 1.357022 1.72135 2.399424]
+
+
+

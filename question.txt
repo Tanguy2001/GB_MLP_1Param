@@ -1,0 +1,18 @@
+modifier les hyperparamètres : 
+
+lr / batch_size / bruit dans les données / augmentation de données / nombres de couches / 
+nombres de neurones / epochs / 
+
+
+interpreter les courbes
+
+couches de conv ? avec 1 canal ? deux canals real/imag ? 
+
+le reseau a l'air de mal apprendre f0, lui donne en entré pour évite d'apprendre 
+ce paramètre ? 
+
+
+
+
+
+

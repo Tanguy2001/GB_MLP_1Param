@@ -8,7 +8,7 @@ input_dim = 756
 hidden_dims = [1000, 1000]
 output_dim = 9
 
-dosier_train = "Entrainement_1e6"
+dosier_train = "Entrainement_1e5"
 
 
 model = MLP(input_dim, hidden_dims, output_dim)
@@ -71,4 +71,7 @@ moyenne_train = np.mean(relative_error_train, axis=0)
 
 moyenne_test = np.mean(relative_error_test, axis=0)
 
-breakpoint()
+
+print("Ecart relatif moyen des paramètres sur les données de train :", moyenne_train)
+
+print("Ecart relatif moyen des paramètres sur les données de test :", moyenne_test)

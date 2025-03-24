@@ -14,6 +14,7 @@ from Methode import (
     train_loop,
     test_loop,
     enregistrer_donnees,
+    ConvMLP,
 )
 
 
@@ -54,6 +55,7 @@ input_dim = waveforms.shape[-1]
 output_dim = parameters_standardized.shape[-1]
 
 model = MLP(input_dim, hidden_dims, output_dim)
+# model = ConvMLP(1, input_dim, hidden_dims, output_dim)  #####################
 
 print(f"Nombre total de paramètres : {count_parameters(model)}")
 print(model)
