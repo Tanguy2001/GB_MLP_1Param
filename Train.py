@@ -67,6 +67,7 @@ train_dataset, test_dataset = random_split(waveform_dataset, [num_train, num_tes
 train_dataloader = DataLoader(train_dataset, batch_size=256, shuffle=True)
 test_dataloader = DataLoader(test_dataset, batch_size=256, shuffle=False)
 
+
 train_features, train_labels = next(iter(train_dataloader))
 
 optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
@@ -90,14 +91,19 @@ chemin_yaml = os.path.join(os.getcwd(), "config_Train.yaml")
 if os.path.exists(chemin_yaml):
     shutil.copy(chemin_yaml, dossier_sauvegarde)
 
-chemin_dataloader = os.path.join(dossier_sauvegarde, "test_dataloader.pth")
-torch.save(test_dataloader, chemin_dataloader)
-
-chemin_dataloader = os.path.join(dossier_sauvegarde, "train_dataloader.pth")
-torch.save(train_dataloader, chemin_dataloader)
-
 chemin_modele = os.path.join(dossier_sauvegarde, "Weights.pth")
 torch.save(model.state_dict(), chemin_modele)
+
+
+train = train_dataset[0:100]
+test = test_dataset[0:100]
+
+
+chemin_dataloader = os.path.join(dossier_sauvegarde, "test_dataset.pth")
+torch.save(test, chemin_dataloader)
+
+chemin_dataloader = os.path.join(dossier_sauvegarde, "train_dataset.pth")
+torch.save(train, chemin_dataloader)
 
 
 epochs = np.arange(1, len(train_history) + 1)

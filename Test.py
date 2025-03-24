@@ -8,44 +8,67 @@ input_dim = 756
 hidden_dims = [1000, 1000]
 output_dim = 9
 
-dosier_train = "Train1"
+dosier_train = "Entrainement_1e6"
 
 
 model = MLP(input_dim, hidden_dims, output_dim)
 
-chemin_train = os.path.join("Train", dosier_train)
-chemin_weights = os.path.join(chemin_train, "Weights.pth")
-chemin_dataloader = os.path.join(chemin_train, "test_dataloader.pth")
-
+chemin = os.path.join("Train", dosier_train)
+chemin_weights = os.path.join(chemin, "Weights.pth")
+chemin_test = os.path.join(chemin, "test_dataset.pth")
+chemin_train = os.path.join(chemin, "train_dataset.pth")
 
 model.load_state_dict(torch.load(chemin_weights, map_location=torch.device("cpu")))
-test_dataloader = torch.load(
-    chemin_dataloader, map_location=torch.device("cpu"), weights_only=False
+test_dataset = torch.load(
+    chemin_test, map_location=torch.device("cpu"), weights_only=False
+)
+
+train_dataset = torch.load(
+    chemin_train, map_location=torch.device("cpu"), weights_only=False
 )
 
 
 model.eval()
 
-waveform = []
-param = []
+waveform_test = test_dataset[0][0]
+param_test = test_dataset[1][0]
+param_eval_test = model(waveform_test)
 
-for batch in test_dataloader:
-    w, p = batch
-    waveform = waveform + w.tolist()
-    param = param + p.tolist()
-
-w_tensor = torch.tensor(waveform).float()
+waveform_train = train_dataset[0][0]
+param_train = train_dataset[1][0]
+param_eval_train = model(waveform_train)
 
 
-outputs = model(w_tensor).tolist()
+parametre_eval_train = np.zeros((len(train_dataset[0]), len(train_dataset[1][0])))
+parametre_eval_test = np.zeros((len(train_dataset[0]), len(train_dataset[1][0])))
 
-outputs = np.array(outputs)
-param = np.array(param)
-param_safe = np.where(param == 0, np.nan, param)
 
-ecart_relatif = 100 * np.abs(outputs - param) / np.abs(param)
-ecart_relatif = np.mean(ecart_relatif, axis=0)
-# ecart_relatif = np.floor(ecart_relatif).astype(int)
+for i in range(len(train_dataset[0])):
+    w_test = test_dataset[0][i]
+    p_test = model(w_test).detach().numpy()
+    parametre_eval_test[i][:] = p_test
 
+    w_train = train_dataset[0][i]
+    p_train = model(w_train).detach().numpy()
+    parametre_eval_train[i][:] = p_train
+
+
+parametre_train = np.array(train_dataset[1][:])
+parametre_test = np.array(test_dataset[1][:])
+
+
+denominateur_train = np.where(parametre_train == 0, 1, np.abs(parametre_train))
+denominateur_test = np.where(parametre_test == 0, 1, np.abs(parametre_test))
+
+relative_error_train = (
+    np.abs(parametre_train - parametre_eval_train) / denominateur_train
+)
+relative_error_test = np.abs(parametre_test - parametre_eval_test) / denominateur_test
+
+np.set_printoptions(precision=6, suppress=True)
+
+moyenne_train = np.mean(relative_error_train, axis=0)
+
+moyenne_test = np.mean(relative_error_test, axis=0)
 
 breakpoint()

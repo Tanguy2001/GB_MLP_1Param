@@ -3,3 +3,4 @@ creer un env venv : python -m venv nom_env
 activer l'env : se placer dans le dossier qui contient le dossier de l'env et taper : source nom_env/bin/activate
 
 desactiver l'env : deactivate
+
