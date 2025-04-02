@@ -17,11 +17,11 @@ lam_min : -3.141592
 lam_max : 3.141592
 beta_sky_min : -1.570796
 beta_sky_max : 1.570796
-num_samples : 1e6          
+num_samples : 100          
 Tobs : 1                    # nombre d'années
 dt : 15
 N : 128                     # nombre de points
-chunk_size : 1000
+chunk_size : 1e6
 Nom_Waveforms_h5 : "Waveform.h5"
 Nom_Parametres_h5 : "Parameters_standardized.h5"
 Nom_MeanVar_h5 : "MeanVar.h5"

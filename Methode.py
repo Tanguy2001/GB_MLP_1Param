@@ -15,16 +15,34 @@ from gbgpu.utils.utility import *
 from Noise import AnalyticNoise
 
 
-def generate_catalog(f_min, f_max, num_samples):
+def generate_catalog(
+    f_min,
+    f_max,
+    num_samples,
+    amp_min,
+    amp_max,
+    iota_min,
+    iota_max,
+    fdot_min,
+    fdot_max,
+    phi0_min,
+    phi0_max,
+    psi_min,
+    psi_max,
+    lam_min,
+    lam_max,
+    beta_sky_min,
+    beta_sky_max,
+):
     f0 = np.random.uniform(f_min, f_max, num_samples)
-    amp = np.random.uniform(1e-23, 1e-21, num_samples)
-    fdot = np.random.uniform(7.538331e-16, 7.538331e-18, num_samples)
+    amp = np.random.uniform(amp_min, amp_max, num_samples)
+    fdot = np.random.uniform(fdot_min, fdot_max, num_samples)
     fddot = np.zeros(num_samples)  # np.random.uniform(1e-50, 1e-49, num_samples)
-    phi0 = np.random.uniform(0, 2 * np.pi, num_samples)
-    iota = np.random.uniform(0, np.pi, num_samples)
-    psi = np.random.uniform(0, np.pi, num_samples)
-    lam = np.random.uniform(-np.pi, np.pi, num_samples)
-    beta_sky = np.random.uniform(-np.pi / 2, np.pi / 2, num_samples)
+    phi0 = np.random.uniform(phi0_min, phi0_max, num_samples)
+    iota = np.random.uniform(iota_min, iota_max, num_samples)
+    psi = np.random.uniform(psi_min, psi_max, num_samples)
+    lam = np.random.uniform(lam_min, lam_max, num_samples)
+    beta_sky = np.random.uniform(beta_sky_min, beta_sky_max, num_samples)
     return np.array((amp, f0, fdot, fddot, -phi0, iota, psi, lam, beta_sky))
 
 
@@ -48,6 +66,16 @@ def whiten(a, sample_frequencies):
     asd_A = np.sqrt(psd_A)
     df = sample_frequencies[1] - sample_frequencies[0]
     a *= np.sqrt(4 * df) / asd_A
+
+    ###
+
+    # mean = np.mean(a, axis=0)
+    # std = np.std(a, axis=0)
+    # b = (a - mean) / std
+
+    # breakpoint()
+
+    ###
 
 
 class WaveformDataset(Dataset):
@@ -134,17 +162,31 @@ def count_parameters(model):
 
 
 def test_loop(dataloader, model):
-    size = len(dataloader.dataset)
+    size = len(dataloader)
     test_loss = 0
     criterion = nn.MSELoss()
     with torch.no_grad():
         for X, y in dataloader:
             predictions = model(X)
             loss = criterion(predictions, y)
-            test_loss += loss.sum()
+            test_loss += loss.item()
     test_loss /= size
     print(f"Test loss: {test_loss:>8f} \n")
     return test_loss
+
+
+# def test_loop(dataloader, model):
+#     size = len(dataloader)
+#     test_loss = 0
+#     criterion = nn.MSELoss()
+#     with torch.no_grad():
+#         for X, y in dataloader:
+#             predictions = model(X)
+#             loss = criterion(predictions, y)
+#             test_loss += loss.item()
+#     test_loss /= size
+#     print(f"Test loss: {test_loss:>8f} \n")
+#     return test_loss
 
 
 def train_loop(dataloader, model, optimizer):
@@ -152,14 +194,15 @@ def train_loop(dataloader, model, optimizer):
     train_loss = 0
     criterion = nn.MSELoss()
     for batch, (X, y) in enumerate(dataloader):
-        ##X = X.unsqueeze(1)  ##################
 
         predictions = model(X)
 
         loss = criterion(predictions, y)
 
-        train_loss += loss.detach().sum()
-        loss = loss.mean()
+        # train_loss += loss.detach().sum()
+        # loss = loss.mean()
+
+        train_loss = train_loss + loss.item()
 
         optimizer.zero_grad()
         loss.backward()
@@ -169,9 +212,12 @@ def train_loop(dataloader, model, optimizer):
             loss_value, current = loss.item(), batch * len(X)
             print(f"Loss: {loss_value:>7f}  [{current:>5d}/{size:>5d} samples]")
 
-    average_loss = train_loss.item() / size
-    print("Average loss: {:.4f}".format(average_loss))
-    return average_loss
+    # average_loss = train_loss.item() / size
+    avg_loss = train_loss / len(dataloader)
+    print(
+        "Average loss: {:.4f}".format(avg_loss)
+    )  # print("Average loss: {:.4f}".format(avg_loss))
+    return avg_loss  # average_loss
 
 
 def enregistrer_donnees(

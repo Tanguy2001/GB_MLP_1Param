@@ -1,0 +1,20 @@
+# Paramètres du Dataset
+
+f_min : 0.00199             # en Hz
+interval_freq : 6e-6        # en Hz
+num_samples : 10000           
+Tobs : 1                    # nombre d'années
+dt : 15
+N : 128                     # nombre de points
+chunk_size : 1000
+Nom_Waveforms_h5 : "WaveformTest.h5"
+Nom_Parametres_h5 : "Parameters_standardizedTest.h5"
+Nom_MeanVar_h5 : "MeanVarTest.h5"
+nom_dossier_Dataset : "Test"
+alpha : 0                   # niveau de bruit
+
+
+
+
+
+
