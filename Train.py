@@ -34,6 +34,8 @@ alpha = config["alpha"]
 Nom_dossier_Dataset = config["Nom_dossier_Dataset"]
 nom_dossier_Train = config["nom_dossier_Train"]
 taille_histo = config["taille_histo"]
+parametres = config["parametres"]
+bruit = config["bruit"]
 
 
 chemin_fichier_waveform = os.path.join("Dataset", Nom_dossier_Dataset, Dataset_Waveform)
@@ -51,13 +53,16 @@ parameters_standardized = parameters_standardized.T
 with h5py.File(chemin_fichier_waveform, "r") as hf:
     waveforms = hf["Waveform"][:]
 
+max_waveform = np.max(waveforms)
+
+
 waveform_dataset = WaveformDataset(parameters_standardized, waveforms, alpha)
 
 input_dim = waveforms.shape[-1]
 output_dim = parameters_standardized.shape[-1]
 
-parametres = ["amp", "f0", "fdot", "fddot", "-phi0", "iota", "psi", "lam", "beta_sky"]
-parametres = ["psi", "lam", "beta_sky"]
+# parametres = ["amp", "f0", "fdot", "fddot", "-phi0", "iota", "psi", "lam", "beta"]
+# parametres = ["lam", "beta"]
 
 
 if len(parametres) != output_dim:
@@ -75,8 +80,7 @@ if os.path.exists(chemin_yaml):
     shutil.copy(chemin_yaml, dossier_sauvegarde)
 
 
-model = MLP(input_dim, hidden_dims, output_dim)
-# model = ConvMLP(1, input_dim, hidden_dims, output_dim)  #####################
+model = MLP(input_dim, hidden_dims, output_dim)  # outputdim = len(parametres)
 
 print(f"Nombre total de paramètres : {count_parameters(model)}")
 print(model)
@@ -106,9 +110,9 @@ train_history = []
 test_history = []
 for t in range(epochs):
     print(f"Epoch {t+1}\n-------------------------------")
-    loss = train_loop(train_dataloader, model, optimizer)
+    loss = train_loop(train_dataloader, model, optimizer, bruit, max_waveform)
     train_history.append(loss)
-    loss = test_loop(test_dataloader, model)
+    loss = test_loop(test_dataloader, model, bruit, max_waveform)
     test_history.append(loss)
 print("Done!")
 
@@ -139,62 +143,4 @@ plt.legend()
 chemin_plot = os.path.join(dossier_sauvegarde, "plot.png")
 plt.savefig(chemin_plot)
 
-plt.show()
-
-
-# Histogramme des ecarts relatifs
-
-
-model = MLP(input_dim, hidden_dims, output_dim)
-
-chemin = os.path.join("Train", nom_dossier_Train, "Weights.pth")
-model.load_state_dict(torch.load(chemin, map_location=torch.device("cpu")))
-
-model.eval()
-
-parametre_eval_train = np.zeros((len(train[0]), len(train[1][0])))
-parametre_eval_test = np.zeros((len(train[0]), len(train[1][0])))
-
-
-for i in range(len(train[0])):
-    w_test = test[0][i]
-    p_test = model(w_test).detach().numpy()
-    parametre_eval_test[i][:] = p_test
-
-    w_train = train[0][i]
-    p_train = model(w_train).detach().numpy()
-    parametre_eval_train[i][:] = p_train
-
-
-parametre_train = np.array(train[1][:])
-parametre_test = np.array(test[1][:])
-
-denominateur_train = np.where(parametre_train == 0, 1, np.abs(parametre_train))
-denominateur_test = np.where(parametre_test == 0, 1, np.abs(parametre_test))
-
-relative_error_train = (
-    np.abs(parametre_train - parametre_eval_train) / denominateur_train
-)
-relative_error_test = (
-    100 * np.abs(parametre_test - parametre_eval_test) / denominateur_test
-)
-
-
-fig, axes = plt.subplots(3, 3, figsize=(10, 10))
-axes = axes.flatten()
-
-for i in range(len(relative_error_test[0])):
-    axes[i].hist(relative_error_test[:, i], bins=100, edgecolor="black", alpha=0.7)
-    axes[i].set_xlabel("Écart relatif (%)")
-    axes[i].set_ylabel("Fréquence")
-    axes[i].set_title(f"Histogramme de {parametres[i]}")
-    axes[i].grid(True)
-
-for j in range(len(relative_error_test[0]), len(axes)):
-    fig.delaxes(axes[j])
-
-plt.subplots_adjust(wspace=0.5, hspace=0.5)
-
-chemin_plot = os.path.join(dossier_sauvegarde, "Histogrammes.png")
-plt.savefig(chemin_plot)
 plt.show()

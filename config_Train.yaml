@@ -1,14 +1,16 @@
 # Paramètres de l'entrainement
 
-hidden_dims : [500, 500]
-Nom_dossier_Dataset : "1e6_amp_f0_iota_phi0_fdot_fixe"
+hidden_dims : [800, 800, 800, 800]
+Nom_dossier_Dataset : "1e6_lam_beta_TEST"
 Dataset_Waveform : "Waveform.h5"
 Dataset_Parametre : "Parameters_standardized.h5"
 MeanVar : "MeanVar.h5"
 train_fraction : 0.8
 batch_size : 256
 lr : 0.0001
-epochs : 20
-nom_dossier_Train : "1e6_amp_f0_iota_phi0_fdot_fixe_500_500_e=20"
+epochs : 10
+nom_dossier_Train : "1e6_lam_beta_800_800_800_800_e=10_TESTTTTTT"
 alpha : 0
 taille_histo : 10000
+parametres : ["lam", "beta"]
+bruit : True

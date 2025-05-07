@@ -60,22 +60,36 @@ def aggregate(a, gb, f_min0, df, start, stop):
         a[i, i_start:i_end] = gb.A[i - start]
 
 
-def whiten(a, sample_frequencies):
+def whiten(onde, sample_frequencies):
     noise = AnalyticNoise(sample_frequencies)
     psd_A = noise.psd(option="A")
     asd_A = np.sqrt(psd_A)
     df = sample_frequencies[1] - sample_frequencies[0]
-    a *= np.sqrt(4 * df) / asd_A
+    onde *= np.sqrt(4 * df) / asd_A
+    return onde
 
-    ###
 
-    # mean = np.mean(a, axis=0)
-    # std = np.std(a, axis=0)
-    # b = (a - mean) / std
-
-    # breakpoint()
-
-    ###
+def waveformA(
+    amp, f0, fdot, fddot, phi0, iota, psi, lam, beta, dt=10, N=128, Tobs=1 * YEAR
+):
+    gb = GBGPU(use_gpu=False)
+    params = np.array(
+        [
+            amp,
+            f0,
+            fdot,
+            fddot,
+            phi0,
+            iota,
+            psi,
+            lam,
+            beta,
+        ]
+    )
+    gb.run_wave(*params, N=N, dt=dt, T=Tobs, oversample=2)
+    freq = gb.freqs[0]
+    A0 = gb.A[0]
+    return A0, freq
 
 
 class WaveformDataset(Dataset):
@@ -161,46 +175,45 @@ def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 
-def test_loop(dataloader, model):
+def angular_distance_loss(y_pred, y_true):
+    return torch.mean(1.0 - torch.cos(y_pred - y_true))
+
+
+def test_loop(dataloader, model, bruit, max_waveform):
     size = len(dataloader)
     test_loss = 0
     criterion = nn.MSELoss()
+
     with torch.no_grad():
         for X, y in dataloader:
+            if bruit == True:
+                X = X + torch.randn_like(X)
+            X = X / max_waveform
             predictions = model(X)
             loss = criterion(predictions, y)
+            # loss = angular_distance_loss(predictions, y)
             test_loss += loss.item()
     test_loss /= size
     print(f"Test loss: {test_loss:>8f} \n")
     return test_loss
 
 
-# def test_loop(dataloader, model):
-#     size = len(dataloader)
-#     test_loss = 0
-#     criterion = nn.MSELoss()
-#     with torch.no_grad():
-#         for X, y in dataloader:
-#             predictions = model(X)
-#             loss = criterion(predictions, y)
-#             test_loss += loss.item()
-#     test_loss /= size
-#     print(f"Test loss: {test_loss:>8f} \n")
-#     return test_loss
-
-
-def train_loop(dataloader, model, optimizer):
+def train_loop(dataloader, model, optimizer, bruit, max_waveform):
     size = len(dataloader.dataset)
     train_loss = 0
     criterion = nn.MSELoss()
+
     for batch, (X, y) in enumerate(dataloader):
+
+        if bruit == True:
+            X = X + torch.randn_like(X)
+
+        X = X / max_waveform
 
         predictions = model(X)
 
         loss = criterion(predictions, y)
-
-        # train_loss += loss.detach().sum()
-        # loss = loss.mean()
+        # loss = angular_distance_loss(predictions, y)
 
         train_loss = train_loss + loss.item()
 

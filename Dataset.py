@@ -41,9 +41,6 @@ n = config["Tobs"]
 dt = config["dt"]
 N = config["N"]
 chunk_size = config["chunk_size"]
-Nom_Waveforms_h5 = config["Nom_Waveforms_h5"]
-Nom_Parametres_h5 = config["Nom_Parametres_h5"]
-Nom_MeanVar_h5 = config["Nom_MeanVar_h5"]
 nom_dossier_Dataset = config["nom_dossier_Dataset"]
 amp_min = float(config["amp_min"])
 amp_max = float(config["amp_max"])
@@ -105,26 +102,31 @@ def generate(
     for start in tqdm(
         range(0, num_samples, chunk_size), desc="Processing", unit="chunk"
     ):
+
         stop = min(start + chunk_size, cat.shape[1])
         gb = generate_response(cat[:, start:stop], Tobs, dt, N)
         aggregate(A_whitened, gb, f_min0, df, start, stop)
         del gb
 
-    whiten(A_whitened, sample_frequencies)
+    Wave = whiten(A_whitened, sample_frequencies)
 
-    waveforms = np.hstack((A_whitened.real, A_whitened.imag))
+    waveforms = np.hstack((Wave.real, Wave.imag))
+
+    """
+    
 
     scaler = MinMaxScaler()
     waveforms = scaler.fit_transform(waveforms)
 
-    # fig, axes = plt.subplots(1, 2, figsize=(10, 10))
-    # axes[0].plot(waveforms[0])
-    # axes[1].plot(waveforms1[0])
-    # plt.show()
+    fig, axes = plt.subplots(1, 2, figsize=(10, 10))
+    axes[0].plot(waveforms[0])
+    axes[1].plot(waveforms1[0])
+    plt.show()
 
-    # for i in range(len(cat)):
-    #     if cat[i][0] == cat[i][1]:
-    #         cat = np.delete(cat, i, axis=0)
+    for i in range(len(cat)):
+        if cat[i][0] == cat[i][1]:
+            cat = np.delete(cat, i, axis=0)
+    """
 
     mask = np.array(
         [True if cat[i][0] != cat[i][1] else False for i in range(len(cat))]
@@ -140,12 +142,12 @@ def generate(
 
     enregistrer_donnees(
         "Dataset",
-        Nom_Waveforms_h5,
+        "Waveform.h5",
         waveforms,
         "config_Dataset.yaml",
-        Nom_Parametres_h5,
+        "Parameters_standardized.h5",
         parameters_standardized,
-        Nom_MeanVar_h5,
+        "MeanVar.h5",
         MV,
         nom_dossier_Dataset,
     )
